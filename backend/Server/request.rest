@@ -1,0 +1,23 @@
+@hostname = localhost
+@port = 3000
+@host = http://{{hostname}}:{{port}}
+
+### Register a new user
+POST http://localhost:3000/rekisteröi
+Content-Type: application/x-www-form-urlencoded
+
+username=t@t&password=salasana
+
+### Get users
+GET http://localhost:3000/users
+Content-Type: application/json
+
+### Login with the user
+POST http://localhost:3000/kirjaudu
+Content-Type: application/x-www-form-urlencoded
+
+username=t@t&password=salasana
+
+### Logout
+POST http://localhost:3000/kirjUlos
+Content-Type: application/x-www-form-urlencoded
