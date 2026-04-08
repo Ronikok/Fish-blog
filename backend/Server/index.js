@@ -57,7 +57,7 @@ app.post('/kirjUlos', (req, res) => {
     })
 }) //Ulos kirjautuminen
 
-app.post('/rekisteröi', async (req, res) =>{
+app.post('/rekisteroi', async (req, res) =>{
     const { username, password } = req.body
     try{
         await registerUser(username, password)
@@ -85,40 +85,82 @@ app.post('/kirjaudu', async (req, res) =>{
     }
 }) //Kirjautuminen jollakin tilillä
 
+app.delete('/api/me', async (req, res) =>{
+    const userId = req.session.userId
 
+    if(!userId) return res.status(401).json({error: "Kirjaudu sisään poistaaksesi tilisi."})
 
-/*
-Työn alla
+    try{
+        await pool.query('DELETE FROM users WHERE id = $1', [userId])
 
-app.post('/kalakanta-tykkays', async(req, res) =>{ 
-    if(!req.session.userId) return res.status(500).send("Kirjaudu ensin sisään!")
-    const { imageName } = req.body
+        req.session.destroy((err) =>{
+            if (err) throw err
+            res.clearCookie('connect.sid')
+            res.json({message: "Tili poistettu."})
+        })
+    } catch(err){
+        console.error(err)
+        res.status(500).json({error: "Tilin poistaminen epäonnistui. Jos ongelma jatkuu ota yhteyttä ylläpitäjiin."})
+    }
+}) //Tilin poisto, poistaa myös julkasut ja tykkäykset
+
+app.post('/api/posts', async (req, res) =>{
+    if(!req.session.userId){
+        return res.status(401).send("Kirjaudu sisään luodaksesi julkaisun.")
+    } // Ei voi luoda julkaisua ellei oo kirjautunu
+
+    const { title, content } = req.body
     const userId = req.session.userId
 
     try{
-        const checkLike = await pool.query(
-            'SELECT * FROM image_likes WHERE user_id = $1 AND image_name = $2',
-            [userId, imageName]
+        await pool.query(
+            'INSERT INTO posts (user_id, title, content) VALUES ($1, $2, $3)',
+            [userId, title, content]
         )
-
-        if (checkLike.rows.length > 0){
-            await pool.query(
-                'DELETE FROM image_likes WHERE user_id = $1 AND image_name = $2',
-                [userId, imageName]
-            )
-        } else{
-            await pool.query(
-                'INSERT INTO image_likes (user_id, image_name) VALUES ($1, $2)',
-                [userId, imageName]
-            )
-        }
-
-        res.redirect('/index')
-    } catch (err){
-        res.status(500).send("Ei onnistunut")
+        res.redirect('/forum.html')
+    } catch(err){
+        console.error("Error creating post:", err)
+        res.status(500).send("Palvelinvirhe.")
     }
-
 })
-*/
+
+app.delete('/api/posts/:id', async (req, res) =>{
+    const postId = req.params.id
+    const userId = req.session.userId
+
+    if(!userId) return res.status(401).json({error: "Kirjaudu sisään."})
+
+    try{
+        const result = await pool.query(
+            'DELETE FROM posts WHERE id = $1 AND user_id = $2',
+            [postId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(403).json({error: "Sinulla ei ole oikeutta poistaa tätä julkaisua tai sitä ei ole olemassa."})
+        } //Laitetaan poistamis nappi näkyy vaa jos omistaa postin
+
+        res.json({message: "Julkaisu poistettu onnistuneesti."})
+    } catch(err){
+        console.error(err)
+        res.status(500).json({ error: "Tietokantavirhe."})
+    }
+}) // Julkasun poisto
+
+app.get('/api/posts', async (req, res) =>{
+    try{
+        const result = await pool.query(
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username 
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            ORDER BY posts.created_at DESC`
+        )
+        res.json(result.rows)
+    } catch(err){
+        console.error("Error fetching threads:", err)
+        res.status(500).json({error: "Palvelinvirhe"})
+    }
+})
+
 app.listen(port)
 console.log('success')
