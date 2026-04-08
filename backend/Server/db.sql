@@ -1,4 +1,5 @@
 -- Database pöydät menee pgadmin4 niin voi testata local db ennen ku laitetaa julki
+-- DELETE ON CASCADE meinaa että jos poistaa tilin nii poistaa muistaki db pöydistä tiedot
 
 -- Käyttäjät pöytä
 CREATE TABLE users (
@@ -16,8 +17,18 @@ CREATE TABLE posts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Forum vastaukset pöytä
+CREATE TABLE replies (
+    id SERIAL PRIMARY KEY,
+    thread_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Forum postien tykkäykset
-CREATE TABLE likes (
+CREATE TABLE postLikes (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
