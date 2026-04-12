@@ -6,7 +6,7 @@
 POST http://localhost:3000/rekisteroi
 Content-Type: application/x-www-form-urlencoded
 
-username=t@t&password=salasana
+username=testi&password=salasana
 
 ### Get users
 GET http://localhost:3000/users
@@ -16,7 +16,7 @@ Content-Type: application/json
 POST http://localhost:3000/kirjaudu
 Content-Type: application/x-www-form-urlencoded
 
-username=t@t&password=salasana
+username=testi&password=salasana
 
 ### Logout
 POST http://localhost:3000/kirjUlos
@@ -30,8 +30,8 @@ POST http://localhost:3000/api/posts
 Content-Type: application/json
 
 {
-    "title": "testi123",
-    "content": "tekstiä123"
+    "title": "Kala",
+    "content": "Löyty kala järvestä :D"
 }
 
 ### Delete post (päätyyn postin id)
