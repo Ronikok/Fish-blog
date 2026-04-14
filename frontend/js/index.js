@@ -34,22 +34,21 @@ if (sortingButton) {
 }
 
 function renderPost(post) {
+    const btnClass = post.user_liked ? 'btn-primary' : 'btn-outline-dark'
+    const likeText = post.user_liked ? 'Tykätty' : 'Tykkää'
     return `
     <li class="list-group-item mb-1">
         <div class="card shadow">
           <div class="card-body">
             <header>
               <h2 class="h5 mb-1">${post.title}</h2>
-              <p class="text-muted">${post.username} • ${new Date(post.created_at).toLocaleString()}</p>
+              <p class="text-muted">${post.username} • ${new Date(post.created_at).toLocaleString('fi-FI')}</p>
             </header>
             <p>${post.content}</p>
             <footer>
-              <button type="button" class="btn btn-outline-dark post-buttons">
-                <svg class="like-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path fill-rule="evenodd" clip-rule="evenodd" d="M22 11.5c0-2.097-1.228-3.498-3.315-3.498h-2.918c.089-.919.133-1.752.133-2.502 0-1.963-1.81-3.5-3.64-3.5-1.414 0-1.81.81-2.049 2.683-.004.034-.094.762-.125.995-.055.407-.112.77-.182 1.133-.273 1.414-.989 2.944-1.727 3.841a2.317 2.317 0 0 0-.456-.318C7.314 10.116 6.838 10 6.153 10h-.306c-.685 0-1.16.116-1.568.334a2.272 2.272 0 0 0-.945.945c-.218.407-.334.883-.334 1.568v5.306c0 .685.116 1.16.334 1.568.218.407.538.727.945.945.407.218.883.334 1.568.334h.306c.685 0 1.16-.116 1.568-.334.235-.126.441-.286.615-.477.697.525 1.68.811 2.985.811h4.452c1.486 0 2.565-.553 3.253-1.487.284-.384.407-.652.597-1.166a.806.806 0 0 1 .162-.214c.026-.028.11-.112.208-.21.135-.134.296-.295.369-.373.323-.346.576-.69.782-1.103.357-.713.406-1.258.337-2.173-.026-.35-.027-.464-.008-.542.034-.145.075-.265.147-.447l.066-.166c.22-.552.314-.971.314-1.619zm-9.932-5.555c.034-.251.129-1.018.127-1.009.062-.483.114-.768.168-.932.76.059 1.537.75 1.537 1.496 0 .955-.08 2.082-.242 3.378a1 1 0 0 0 .992 1.124h4.035c.92 0 1.315.451 1.315 1.498 0 .37-.04.547-.173.881l-.066.167a4.916 4.916 0 0 0-.234.72c-.084.356-.083.586-.04 1.156.044.582.022.822-.131 1.129a2.607 2.607 0 0 1-.455.63c-.04.044-.148.152-.262.266-.129.128-.265.264-.319.322-.266.286-.451.554-.573.882-.128.345-.192.486-.33.674-.314.425-.798.673-1.644.673H11.32c-1.833 0-2.317-.568-2.317-2v-4.35c1.31-1.104 2.458-3.356 2.864-5.46.077-.405.14-.803.2-1.245zm-6.846 6.152c.116-.061.278-.097.625-.097h.306c.347 0 .509.036.625.098a.275.275 0 0 1 .124.124c.062.116.098.277.098.625v5.306c0 .348-.036.509-.098.625a.275.275 0 0 1-.124.125c-.116.061-.278.097-.625.097h-.306c-.347 0-.509-.036-.625-.098a.275.275 0 0 1-.124-.124C5.036 18.662 5 18.5 5 18.153v-5.306c0-.348.036-.509.098-.625a.275.275 0 0 1 .124-.124z"/>
-                </svg>
-                Tykkää
-              </button>
+              <button type="button" class="btn ${btnClass} post-buttons like-btn" data-id="${post.id}">
+                <span class="like-count">${post.total_likes}</span>
+                <span class="like-text">${likeText}</span>
               <button type="button" class="btn btn-outline-dark post-buttons" data-bs-toggle="modal" data-bs-target="#comments-modal">
                 <svg class="comment-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <g transform="translate(-152 -255)" fill="currentColor">
@@ -63,13 +62,61 @@ function renderPost(post) {
         </div>
       </li>`
 }
-
+let currentPage = 1
 async function loadPosts() {
-    const response = await fetch('/api/posts');
+  try{ 
+    const response = await fetch(`/api/load-posts?page=${currentPage}`)
     const posts = await response.json();
 
-    const list = document.getElementById("forum-post-list");
-    list.innerHTML = posts.map(renderPost).join('')
-}
+    const list = document.getElementById('forum-post-list')
+    const btn = document.getElementById('load-more-btn')
 
-document.addEventListener('DOMContentLoaded', loadPosts);
+    if(currentPage === 1) list.innerHTML = ''
+
+    if(posts.length<10){
+      if(btn) btn.style.display = 'none'
+    } else{
+      if(btn) btn.style.display = 'block'
+    }
+    
+    posts.forEach(post =>{
+      const postHTML = renderPost(post)
+      list.insertAdjacentHTML('beforeend', postHTML)
+    })
+
+} catch (err){
+  console.error("Virhe ladatessa julkaisuja:", err)
+}}
+loadPosts()
+
+document.getElementById('load-more-btn').addEventListener('click',()=>{
+  currentPage++
+  loadPosts()
+}) //Lataa uusimmat 10 julkaisua
+
+document.getElementById('forum-post-list')-addEventListener('click', async (e)=>{
+  const btn = e.target.closest('.like-btn')
+  if(!btn) return
+
+  const postId = btn.getAttribute('data-id')
+  const countSpan = btn.querySelector('.like-count')
+  const textSpan = btn.querySelector('.like-text')
+
+  try{
+  const response = await fetch(`/api/like-post/${postId}`, {method: 'POST'})
+        const data = await response.json()
+        let currentCount = parseInt(countSpan.innerText)
+
+        if (data.liked){
+            btn.classList.replace('btn-outline-dark', 'btn-primary')
+            textSpan.innerText = 'Tykätty'
+            countSpan.innerText = currentCount + 1
+        } else{
+            btn.classList.replace('btn-primary', 'btn-outline-dark')
+            textSpan.innerText = 'Tykkää'
+            countSpan.innerText = currentCount - 1
+        }
+  } catch(err){
+    console.error("Jokin meni pieleen:", err)
+  }
+}) //Lataa lisää julkaisuja napista

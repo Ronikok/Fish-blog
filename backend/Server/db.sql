@@ -20,7 +20,7 @@ CREATE TABLE posts (
 -- Forum vastaukset pöytä
 CREATE TABLE replies (
     id SERIAL PRIMARY KEY,
-    thread_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    posts_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -32,6 +32,7 @@ CREATE TABLE postLikes (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, post_id)
 );
 

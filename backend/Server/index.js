@@ -85,7 +85,7 @@ app.post('/kirjaudu', async (req, res) =>{
     }
 }) //Kirjautuminen jollakin tilillä
 
-app.delete('/api/me', async (req, res) =>{
+app.delete('/api/delete-user', async (req, res) =>{
     const userId = req.session.userId
 
     if(!userId) return res.status(401).json({error: "Kirjaudu sisään poistaaksesi tilisi."})
@@ -104,7 +104,7 @@ app.delete('/api/me', async (req, res) =>{
     }
 }) //Tilin poisto, poistaa myös julkasut ja tykkäykset
 
-app.post('/api/posts', async (req, res) =>{
+app.post('/api/create-post', async (req, res) =>{
     if(!req.session.userId){
         return res.status(401).send("Kirjaudu sisään luodaksesi julkaisun.")
     } // Ei voi luoda julkaisua ellei oo kirjautunu
@@ -124,7 +124,7 @@ app.post('/api/posts', async (req, res) =>{
     }
 })
 
-app.delete('/api/posts/:id', async (req, res) =>{
+app.delete('/api/delete-post/:id', async (req, res) =>{
     const postId = req.params.id
     const userId = req.session.userId
 
@@ -147,20 +147,58 @@ app.delete('/api/posts/:id', async (req, res) =>{
     }
 }) // Julkasun poisto
 
-app.get('/api/posts', async (req, res) =>{
+app.post('/api/like-post/:id', async (req, res) =>{
+    const postId = req.params.id
+    const userId = req.session.userId
+
+    if(!userId) return res.status(401).json({error: "Kirjaudu sisään."})
+
+    try{
+        const checkLike = await pool.query(
+            'SELECT * FROM postLikes WHERE user_id = $1 AND post_id = $2',
+            [userId, postId]
+        )
+    
+    if(checkLike.rows.length>0){
+        await pool.query(
+            'DELETE FROM postLikes WHERE  user_id = $1 AND post_id = $2',
+            [userId, postId]
+        )
+        return res.json({liked:false})
+    } else{
+        await pool.query(
+            'INSERT INTO postLikes (user_id, post_id) VALUES ($1,$2)',
+            [userId, postId]
+        )
+        res.json({liked:true})
+    }} catch(err){
+        console.error(err)
+        res.status(500).json({error:"Tietokanta virhe"})
+    }
+}) //Julkaisun tykkäys methodi
+
+app.get('/api/load-posts', async (req, res) =>{
+    const page = parseInt(req.query.page) || 1
+    const limit = 10
+    const offset = (page-1)* limit
+    const userId = req.session.userId || null
     try{
         const result = await pool.query(
-            `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username 
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username,
+            (SELECT COUNT(*) FROM postLikes WHERE post_id = posts.id) AS total_likes,
+            EXISTS(SELECT 1 FROM postLikes WHERE post_id = posts.id AND user_id = $3) AS user_liked
             FROM posts 
             JOIN users ON posts.user_id = users.id 
-            ORDER BY posts.created_at DESC`
+            ORDER BY posts.created_at DESC
+            LIMIT $1 OFFSET $2`,
+            [limit, offset, userId]
         )
         res.json(result.rows)
     } catch(err){
         console.error("Error fetching threads:", err)
         res.status(500).json({error: "Palvelinvirhe"})
     }
-})
+}) //Lataa julkaisut
 
 app.listen(port)
 console.log('success')
