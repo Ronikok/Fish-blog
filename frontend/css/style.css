@@ -180,3 +180,51 @@
 .btn-password:hover {
   background-color: #AEFF71;
 }
+.delete-text {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.btn-delete {
+  width: 100%;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px;
+}
+
+.btn-delete:hover {
+  background-color: #d84333;
+  color: white;
+}
+
+.btn-confirm {
+  width: 100%;
+  background-color: #AEFF71;
+  border: none;
+  border-radius: 25px;
+  padding: 10px;
+}
+
+.btn-confirm:hover {
+  background-color: #9bea66;
+}
+.btn-cancel {
+  width: 100%;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px;
+}
+
+.btn-cancel:hover {
+  background-color: #5c636a;
+  color: white;
+}
+.container-sm {
+    margin-bottom: 20px;
+}
