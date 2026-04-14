@@ -6,20 +6,22 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form>
+        <form id="post-form" action="/api/posts" method="POST">
+
           <div class="mb-3">
-            <label for="recipient-name" class="col-form-label">Otsikko:</label>
-            <input type="text" class="form-control" id="-">
+            <label for="title" class="col-form-label">Otsikko:</label>
+            <input type="text" class="form-control" id="title" name="title" required minlength="3">
           </div>
+
           <div class="mb-3">
-            <label for="message-text" class="col-form-label">Teksti:</label>
-            <textarea class="form-control" rows="8" id=""></textarea>
+            <label for="post-content" class="col-form-label">Teksti:</label>
+            <textarea class="form-control" rows="8" id="post-content" name="content" required minlength="3" maxlength="255"></textarea>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Peruuta</button>
-        <button type="button" class="btn btn-primary">Julkaise</button>
+        <button type="submit" class="btn btn-primary" form="post-form">Julkaise</button>
       </div>
     </div>
   </div>

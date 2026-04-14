@@ -112,6 +112,14 @@ app.post('/api/create-post', async (req, res) =>{
     const { title, content } = req.body
     const userId = req.session.userId
 
+    //tarkistaa että julkaisu ei ole tyhjä
+    if (!title?.trim()) {
+        return res.status(400).json({ error: "Otsikko ei voi olla tyhjä"})
+    }
+    else if(!content?.trim()) {
+        return res.status(400).json({ error: "Julkaisu ei voi olla tyhjä"})
+    }
+    
     try{
         await pool.query(
             'INSERT INTO posts (user_id, title, content) VALUES ($1, $2, $3)',
