@@ -59,6 +59,13 @@ app.post('/kirjUlos', (req, res) => {
 
 app.post('/rekisteroi', async (req, res) =>{
     const { username, password } = req.body
+    if (!username?.trim()) {
+            return res.status(400).json({ error: "Käyttäjänimi ei voi olla tyhjä"})
+        }
+        else if(!password?.trim()) {
+            return res.status(400).json({ error: "Salasana ei voi olla tyhjä"})
+        }
+
     try{
         await registerUser(username, password)
         res.redirect('/index.html')
