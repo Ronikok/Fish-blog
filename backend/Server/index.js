@@ -62,8 +62,8 @@ app.post('/rekisteroi', async (req, res) =>{
     if (!username?.trim()) {
             return res.status(400).json({ error: "Käyttäjänimi ei voi olla tyhjä"})
         }
-        else if(!password?.trim()) {
-            return res.status(400).json({ error: "Salasana ei voi olla tyhjä"})
+    if(!password?.trim() || password.trim().length < 5) {
+            return res.status(400).json({ error: "Salasanan täytyy olla vähintään 5 merkkiä"})
         }
 
     try{
