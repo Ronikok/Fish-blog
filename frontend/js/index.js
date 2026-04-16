@@ -23,14 +23,7 @@ document.addEventListener('DOMContentLoaded', kirjautunutUI) //Näyttää vierai
 
 const sortingButton = document.getElementById("sorting");
 const sortingItems = document.querySelectorAll(".sorting-item");
-let currentSort = "newest"
-
-const sortingOptions = {
-  "newest": "/api/load-posts",
-  "oldest": "/api/load-posts-oldest",
-  "likes-desc": "/api/load-posts-ordered-likes-desc",
-  "likes-asc": "/api/load-posts-ordered-likes-asc"
-};
+let currentSort = 'newest'
 
 if (sortingButton) {
     sortingItems.forEach((item) => {
@@ -69,11 +62,14 @@ function renderPost(post) {
         </div>
       </li>`
 }
+
+const searchInput = document.getElementById("forum-search")
+
 let currentPage = 1
 async function loadPosts() {
   try{ 
-    const sortEndpoint = sortingOptions[currentSort]
-    const response = await fetch(`${sortEndpoint}?page=${currentPage}`)
+    const searchText = searchInput ? searchInput.value.trim() : ''
+    const response = await fetch(`/api/load-posts?page=${currentPage}&sort=${currentSort}&search=${encodeURIComponent(searchText)}`)
     const posts = await response.json();
 
     const list = document.getElementById('forum-post-list')
@@ -96,6 +92,13 @@ async function loadPosts() {
   console.error("Virhe ladatessa julkaisuja:", err)
 }}
 loadPosts()
+
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    currentPage = 1
+    loadPosts()
+  })
+}
 
 document.getElementById('load-more-btn').addEventListener('click',()=>{
   currentPage++
