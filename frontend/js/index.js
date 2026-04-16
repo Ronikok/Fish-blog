@@ -98,7 +98,7 @@ if (searchInput) {
     currentPage = 1
     loadPosts()
   })
-}
+}//Hakukenttää varten
 
 document.getElementById('load-more-btn').addEventListener('click',()=>{
   currentPage++
