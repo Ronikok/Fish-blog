@@ -93,10 +93,23 @@ async function loadPosts() {
 }}
 loadPosts()
 
+const forumSearchButton = document.getElementById("forum-search-button")
+
+function runSearch() {
+  currentPage = 1
+  loadPosts()
+}
+
+if (forumSearchButton) {
+  forumSearchButton.addEventListener('click', runSearch)
+}
+
 if (searchInput) {
-  searchInput.addEventListener('input', () => {
-    currentPage = 1
-    loadPosts()
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      runSearch()
+    }
   })
 }//Hakukenttää varten
 
