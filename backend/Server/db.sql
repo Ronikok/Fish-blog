@@ -12,7 +12,7 @@ CREATE TABLE users (
 CREATE TABLE posts (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(1024) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -22,7 +22,7 @@ CREATE TABLE replies (
     id SERIAL PRIMARY KEY,
     posts_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
+    content VARCHAR(1024) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -43,12 +43,30 @@ CREATE TABLE "session" (
   "expire" timestamp(6) NOT NULL
 );
 
--- Kalakanta tykkäykset
-CREATE TABLE kalakantaTykkaykset (
+-- Kalatiedot pöytä
+CREATE TABLE fishes (
     id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    scientific_name VARCHAR(100),
+    description TEXT,
+    image_url VARCHAR(255)
+);
+
+INSERT INTO fishes (name, scientific_name, description, image_url)
+VALUES 
+    ('Nimi', 'Tieteellinen nimi', 'Kuvaus', 'kuva.jpg');
+
+-- Kalojen arvosanat pöytä
+CREATE TABLE fish_ratings (
+    id SERIAL PRIMARY KEY,
+    fish_id INTEGER REFERENCES fishes(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    image_name VARCHAR(100) NOT NULL,
-    UNIQUE(user_id, image_name)
+    rating_thrill NUMERIC(2,1) CHECK (rating_thrill >= 0 AND rating_thrill <= 5),
+    rating_rarity NUMERIC(2,1) CHECK (rating_rarity >= 0 AND rating_rarity <= 5),
+    rating_taste NUMERIC(2,1) CHECK (rating_taste >= 0 AND rating_taste <= 5),
+    rating_overall NUMERIC(2,1) CHECK (rating_overall >= 0 AND rating_overall <= 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, fish_id)
 );
 
 
