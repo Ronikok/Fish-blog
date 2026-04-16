@@ -23,12 +23,16 @@ document.addEventListener('DOMContentLoaded', kirjautunutUI) //Näyttää vierai
 
 const sortingButton = document.getElementById("sorting");
 const sortingItems = document.querySelectorAll(".sorting-item");
+let currentSort = 'newest'
 
 if (sortingButton) {
     sortingItems.forEach((item) => {
         item.addEventListener("click", (event) => {
             event.preventDefault();
             sortingButton.textContent = item.textContent.trim();
+            currentPage = 1
+            currentSort = item.dataset.sort
+            loadPosts()
         });
     });
 }
@@ -58,10 +62,14 @@ function renderPost(post) {
         </div>
       </li>`
 }
+
+const searchInput = document.getElementById("forum-search")
+
 let currentPage = 1
 async function loadPosts() {
   try{ 
-    const response = await fetch(`/api/load-posts?page=${currentPage}`)
+    const searchText = searchInput ? searchInput.value.trim() : ''
+    const response = await fetch(`/api/load-posts?page=${currentPage}&sort=${currentSort}&search=${encodeURIComponent(searchText)}`)
     const posts = await response.json();
 
     const list = document.getElementById('forum-post-list')
@@ -84,6 +92,26 @@ async function loadPosts() {
   console.error("Virhe ladatessa julkaisuja:", err)
 }}
 loadPosts()
+
+const forumSearchButton = document.getElementById("forum-search-button")
+
+function runSearch() {
+  currentPage = 1
+  loadPosts()
+}
+
+if (forumSearchButton) {
+  forumSearchButton.addEventListener('click', runSearch)
+}
+
+if (searchInput) {
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      runSearch()
+    }
+  })
+}//Hakukenttää varten
 
 document.getElementById('load-more-btn').addEventListener('click',()=>{
   currentPage++
