@@ -250,9 +250,78 @@ app.get('/api/load-posts', async (req, res) =>{
         console.error("Error fetching threads:", err)
         res.status(500).json({error: "Palvelinvirhe"})
     }
-}) //Lataa julkaisut
+}) //Lataa julkaisut (uusin)
 
-//profiili sivu, tarkistaa sisäänkirjautumisen, hakeee julkaisut
+app.get('/api/load-posts-oldest', async (req, res) =>{
+    const page = parseInt(req.query.page) || 1
+    const limit = 10
+    const offset = (page-1)* limit
+    const userId = req.session.userId || null
+    try{
+        const result = await pool.query(
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username,
+            (SELECT COUNT(*) FROM postLikes WHERE post_id = posts.id) AS total_likes,
+            EXISTS(SELECT 1 FROM postLikes WHERE post_id = posts.id AND user_id = $3) AS user_liked
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            ORDER BY posts.created_at ASC
+            LIMIT $1 OFFSET $2`,
+            [limit, offset, userId]
+        )
+        res.json(result.rows)
+    } catch(err){
+        console.error("Error fetching threads:", err)
+        res.status(500).json({error: "Palvelinvirhe"})
+    }
+}) //Lataa julkaisut (vanhin)
+
+app.get('/api/load-posts-ordered-likes-desc', async (req, res) =>{
+    const page = parseInt(req.query.page) || 1
+    const limit = 10
+    const offset = (page-1)* limit
+    const userId = req.session.userId || null
+    try{
+        const result = await pool.query(
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username,
+            (SELECT COUNT(*) FROM postLikes WHERE post_id = posts.id) AS total_likes,
+            EXISTS(SELECT 1 FROM postLikes WHERE post_id = posts.id AND user_id = $3) AS user_liked
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            ORDER BY total_likes DESC, posts.created_at DESC
+            LIMIT $1 OFFSET $2`,
+            [limit, offset, userId]
+        )
+        res.json(result.rows)
+    } catch(err){
+        console.error("Error fetching threads:", err)
+        res.status(500).json({error: "Palvelinvirhe"})
+    }
+}) //Lataa julkaisut, lajiteltu tykkäysten perusteella (laskeva)
+
+app.get('/api/load-posts-ordered-likes-asc', async (req, res) =>{
+    const page = parseInt(req.query.page) || 1
+    const limit = 10
+    const offset = (page-1)* limit
+    const userId = req.session.userId || null
+    try{
+        const result = await pool.query(
+            `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username,
+            (SELECT COUNT(*) FROM postLikes WHERE post_id = posts.id) AS total_likes,
+            EXISTS(SELECT 1 FROM postLikes WHERE post_id = posts.id AND user_id = $3) AS user_liked
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            ORDER BY total_likes ASC, posts.created_at DESC
+            LIMIT $1 OFFSET $2`,
+            [limit, offset, userId]
+        )
+        res.json(result.rows)
+    } catch(err){
+        console.error("Error fetching threads:", err)
+        res.status(500).json({error: "Palvelinvirhe"})
+    }
+}) //Lataa julkaisut, lajiteltu tykkäysten perusteella (nouseva)
+
+//profiili sivu, tarkistaa sisäänkirjautumisen, hakee julkaisut
 
 
 app.get('/api/my-posts', async (req, res) => {
