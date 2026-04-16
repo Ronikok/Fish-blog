@@ -238,6 +238,7 @@ app.get('/api/load-posts', async (req, res) =>{
         const result = await pool.query(
             `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username,
             (SELECT COUNT(*) FROM postLikes WHERE post_id = posts.id) AS total_likes,
+            (SELECT COUNT(*) FROM replies WHERE posts_id = posts.id) AS total_replies,
             EXISTS(SELECT 1 FROM postLikes WHERE post_id = posts.id AND user_id = $3) AS user_liked
             FROM posts 
             JOIN users ON posts.user_id = users.id 
@@ -278,6 +279,90 @@ app.get('/api/my-posts', async (req, res) => {
     }
 })
 
+app.get('/api/fishes', async (req, res) => {
+    const userId = req.session.userId || null
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                fishes.*,
+                COALESCE(ROUND(AVG((r.rating_thrill + r.rating_rarity + r.rating_taste + r.rating_overall) / 4.0), 1), 0) AS overall_average,
+
+                COALESCE(ROUND(AVG(r.rating_thrill), 1), 0) AS avg_rating_thrill,
+                COALESCE(ROUND(AVG(r.rating_rarity), 1), 0) AS avg_rating_rarity,
+                COALESCE(ROUND(AVG(r.rating_taste), 1), 0) AS avg_rating_taste,
+                COALESCE(ROUND(AVG(r.rating_overall), 1), 0) AS avg_rating_overall,
+                COUNT(r.id) AS total_ratings
+            FROM fishes
+            LEFT JOIN fish_ratings r ON fishes.id = r.fish_id
+            GROUP BY fishes.id
+            ORDER BY fishes.name ASC
+        `)
+
+        res.json(result.rows)
+    } catch (err) {
+        console.error("Virhe kalojen latauksessa:", err)
+        res.status(500).json({ error: "Tietokantavirhe kalojen haussa." })
+    }
+}) //Lataa kalojen tiedot
+
+app.post('/api/fishes/:id/rate', async (req, res) => {
+    const fishId = req.params.id
+    const userId = req.session.userId
+    const {rating1, rating2, rating3, rating4} = req.body
+
+    if(!userId) return res.status(401).json({ error: "Kirjaudu sisään arvostellaksesi." })
+
+    const isValidRating = (val) => {
+        const num = parseFloat(val)
+        return !isNaN(num) && num >= 0 && num <= 5 && (num * 10) % 5 === 0
+    }
+
+    if (![rating1, rating2, rating3, rating4].every(isValidRating)) {
+        return res.status(400).json({error: "Virheellinen arvosana."})
+    }
+
+    try{
+        await pool.query(`
+            INSERT INTO fish_ratings (fish_id, user_id, rating_thrill, rating_rarity, rating_taste, rating_overall) 
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (user_id, fish_id) 
+            DO UPDATE SET 
+                rating_thrill = EXCLUDED.rating_thrill,
+                rating_rarity = EXCLUDED.rating_rarity,
+                rating_taste = EXCLUDED.rating_taste,
+                rating_overall = EXCLUDED.rating_overall
+        `, [fishId, userId, rating1, rating2, rating3, rating4]);
+
+        res.json({ message: "Arvostelu tallennettu!" })
+    } catch(err){
+        console.error("Virhe arvostelun tallennuksessa:", err)
+        res.status(500).json({error: "Tietokantavirhe."})
+    }
+}) //Kalan arviointi
+
+app.delete('/api/fishes/:id/rate', async (req, res) =>{
+    const fishId = req.params.id
+    const userId = req.session.userId
+
+    if(!userId) return res.status(401).json({ error: "Kirjaudu sisään poistaaksesi arvostelun." })
+
+    try{
+        const result = await pool.query(
+            'DELETE FROM fish_ratings WHERE fish_id = $1 AND user_id = $2',
+            [fishId, userId]
+        )
+
+        if(result.rowCount === 0){
+            return res.status(404).json({ error: "Arvostelua ei löytynyt tai se on jo poistettu." })
+        }
+
+        res.json({ message: "Arvostelu poistettu onnistuneesti!" })
+    }catch(err){
+        console.error("Virhe arvostelun poistossa:", err)
+        res.status(500).json({ error: "Tietokantavirhe arvostelua poistettaessa." })
+    }
+}) //Kalan arvioinnin poisto
 
 
 app.listen(port)
