@@ -43,7 +43,7 @@ function renderPost(post) {
           </div>
         </div>
       </li>`
-}
+};
 
 async function showDelete() {
   try {
