@@ -333,3 +333,11 @@
 .forumDeletePostBtn {
   display: none;
 }
+
+@media (min-width: 992px) {
+  #forum-post-container,
+  #filterBar,
+  #navbar-content {
+    width: 90%;
+  }
+}
