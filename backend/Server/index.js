@@ -492,6 +492,23 @@ app.delete('/api/fishes/:id/rate', async (req, res) =>{
     }
 }) //Kalan arvioinnin poisto
 
+const fs = require('fs')
+
+// Temporary route to build the database
+app.get('/setup-db', async (req, res) => {
+    try {
+        // Read the SQL file from the same folder
+        const sql = fs.readFileSync(path.join(__dirname, 'db.sql'), 'utf8')
+        
+        // Execute the entire SQL string
+        await pool.query(sql)
+        
+        res.send("Tietokanta luotu onnistuneesti! (Database tables created!)")
+    } catch (err) {
+        console.error(err)
+        res.status(500).send("Virhe: " + err.message)
+    }
+})
 
 app.listen(port)
 console.log('success')
